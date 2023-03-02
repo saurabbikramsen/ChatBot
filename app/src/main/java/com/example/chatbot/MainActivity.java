@@ -1,14 +1,22 @@
 package com.example.chatbot;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -19,6 +27,8 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Locale;
+import java.util.Objects;
 
 
 import okhttp3.Call;
@@ -36,8 +46,10 @@ public class MainActivity extends AppCompatActivity {
     private EditText userMsgEdit;
     private FloatingActionButton sendMsgFAB;
     private ChatRVAdapter chatRVAdapter;
-    private String secret_key = "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";
+    private String secret_key = "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";
     OkHttpClient client = new OkHttpClient();
+    int REQUEST_CODE_SPEECH_INPUT = 22222;
+    TextToSpeech t1;
 
 
     public static final MediaType JSON
@@ -48,10 +60,41 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        t1 = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (status != TextToSpeech.ERROR) {
+                    t1.setLanguage(Locale.UK);
+                }
+            }
+        });
+
 
         chatsRV = findViewById(R.id.idRVChats);
         userMsgEdit = findViewById(R.id.idEdtMessage);
         sendMsgFAB = findViewById(R.id.idFABSend);
+        findViewById(R.id.txt_mic).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent
+                        = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE,
+                        Locale.getDefault());
+                intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak to text");
+
+                try {
+                    startActivityForResult(intent, REQUEST_CODE_SPEECH_INPUT);
+                } catch (Exception e) {
+                    Toast
+                            .makeText(MainActivity.this, " " + e.getMessage(),
+                                    Toast.LENGTH_SHORT)
+                            .show();
+                }
+            }
+
+        });
         chatList = new ArrayList<>();
         chatRVAdapter = new ChatRVAdapter(chatList, this);
         LinearLayoutManager manager = new LinearLayoutManager(this);
@@ -74,57 +117,80 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    void networkCall(String user_message) {
-        chatList.add(new ChatModel(user_message, ChatModel.user_key));
-        chatRVAdapter.notifyDataSetChanged();
 
-        //okhttp
-        chatList.add(new ChatModel("Typing... ", ChatModel.bot_key));
 
-        JSONObject jsonBody = new JSONObject();
-        try {
-            jsonBody.put("model", "text-davinci-003");
-            jsonBody.put("prompt", user_message);
-            jsonBody.put("max_tokens", 4000);
-            jsonBody.put("temperature", 0);
-        } catch (JSONException e) {
-            e.printStackTrace();
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode,
+                                    @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_SPEECH_INPUT) {
+            if (resultCode == RESULT_OK && data != null) {
+                ArrayList<String> result = data.getStringArrayListExtra(
+                        RecognizerIntent.EXTRA_RESULTS);
+                userMsgEdit.setText(
+                        Objects.requireNonNull(result).get(0));
+            }
         }
-        RequestBody body = RequestBody.create(JSON, jsonBody.toString());
-        Request request = new Request.Builder()
-                .url("https://api.openai.com/v1/completions")
-                .header("Authorization", "Bearer " + secret_key)
-                .post(body)
-                .build();
+    }
 
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    JSONObject jsonObject = null;
-                    try {
-                        jsonObject = new JSONObject(response.body().string());
-                        JSONArray jsonArray = jsonObject.getJSONArray("choices");
-                        String result = jsonArray.getJSONObject(0).getString("text");
-                        addResponse(result.trim());
-                    } catch (JSONException e) {
-                        Log.d("message", "onResponse: " + e.getMessage());
-                        e.printStackTrace();
+    void networkCall(String user_message) {
+        try {
+
+            chatList.add(new ChatModel(user_message, ChatModel.user_key));
+            chatRVAdapter.notifyDataSetChanged();
+
+            //okhttp
+            chatList.add(new ChatModel("Typing... ", ChatModel.bot_key));
+
+            JSONObject jsonBody = new JSONObject();
+            try {
+                jsonBody.put("model", "text-davinci-003");
+                jsonBody.put("prompt", user_message);
+                jsonBody.put("max_tokens", 4000);
+                jsonBody.put("temperature", 0);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            RequestBody body = RequestBody.create(JSON, jsonBody.toString());
+            Request request = new Request.Builder()
+                    .url("https://api.openai.com/v1/completions")
+                    .header("Authorization", "Bearer " + secret_key)
+                    .post(body)
+                    .build();
+
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                    if (response.isSuccessful()) {
+                        JSONObject jsonObject = null;
+                        try {
+                            jsonObject = new JSONObject(response.body().string());
+                            JSONArray jsonArray = jsonObject.getJSONArray("choices");
+                            String result = jsonArray.getJSONObject(0).getString("text");
+                                t1.speak(result, TextToSpeech.QUEUE_FLUSH, null);
+
+                            addResponse(result.trim());
+                        } catch (JSONException e) {
+                            Log.d("message", "onResponse: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+
+
+                    } else {
+                        addResponse("Failed to load response due to " + response.body().toString());
                     }
-
-
-                } else {
-                    addResponse("Failed to load response due to " + response.body().toString());
                 }
-            }
 
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                addResponse("Failed to load response due to " + e.getMessage());
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    addResponse("Failed to load response due to " + e.getMessage());
 
-            }
+                }
 
-        });
+            });
+        }catch (Exception ignored){
+
+        }
     }
 
     void addResponse(String response) {

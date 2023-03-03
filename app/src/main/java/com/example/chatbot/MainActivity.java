@@ -53,12 +53,12 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnUt
     private EditText userMsgEdit;
     private FloatingActionButton sendMsgFAB;
     private ChatRVAdapter chatRVAdapter;
-    private String secret_key = "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";
+    private String secret_key = "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";
     OkHttpClient client = new OkHttpClient();
     int REQUEST_CODE_SPEECH_INPUT = 22222;
     TextToSpeech t1;
 
-    boolean autoSpeck = true;
+    boolean autoSpeak = true;
     MediaPlayer mp;
 
 
@@ -170,13 +170,17 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnUt
                                          boolean isChecked) {
                 if (isChecked) {
                     switchAB.setChecked(true);
-                    autoSpeck = true;
+                    autoSpeak = true;
+                    Toast.makeText(getApplicationContext(),"Automatic Mode",Toast.LENGTH_SHORT).show();
+
                 } else {
                     switchAB.setChecked(false);
                     if(t1.isSpeaking()){
                         t1.stop();
                     }
-                    autoSpeck = false;
+                    autoSpeak = false;
+                    Toast.makeText(getApplicationContext(),"Manual Mode",Toast.LENGTH_SHORT).show();
+
                 }
             }
         });
@@ -186,28 +190,10 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnUt
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
 
-//        if(item.getItemId()==R.id.btn_switch){
-//            if(btnSwitch.isChecked()){
-//                btnSwitch.setChecked(false);
-//                autoSpeck=false;
-//            }else{
-//                btnSwitch.setChecked(true);
-//                autoSpeck=true;
-//            }
 
-//        }
         return super.onOptionsItemSelected(item);
     }
-    //    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-//        inflater.inflate(R.menu.menuitems, menu);
-//        MenuItem menuItem = menu.findItem(R.id.btn_switch);
-//        SwitchCompat mySwitch = (SwitchCompat) menuItem.getActionView();
-//
-//        mySwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-//
-//        });
-//
-//    }
+
 
 
     @Override
@@ -218,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnUt
             if (resultCode == RESULT_OK && data != null) {
                 ArrayList<String> result = data.getStringArrayListExtra(
                         RecognizerIntent.EXTRA_RESULTS);
-                if (autoSpeck) {
+                if (autoSpeak) {
 
 //                    chatList.add(new ChatModel(Objects.requireNonNull(result).get(0), ChatModel.user_key));
 //                    chatRVAdapter.notifyDataSetChanged();
@@ -268,7 +254,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnUt
                             jsonObject = new JSONObject(response.body().string());
                             JSONArray jsonArray = jsonObject.getJSONArray("choices");
                             String result = jsonArray.getJSONObject(0).getString("text");
-                            if (autoSpeck) {
+                            if (autoSpeak) {
                                 HashMap<String, String> myHashAlarm = new HashMap<String, String>();
 //                                myHashAlarm.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_ALARM));
                                 myHashAlarm.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "SOME MESSAGE");
@@ -325,7 +311,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnUt
             @Override
             public void run() {
                 //Do something after 100ms
-                if(!t1.isSpeaking() && autoSpeck){
+                if(!t1.isSpeaking() && autoSpeak){
 
                     openGoogleAssist();
 

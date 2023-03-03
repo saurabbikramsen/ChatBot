@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnUt
     private EditText userMsgEdit;
     private FloatingActionButton sendMsgFAB;
     private ChatRVAdapter chatRVAdapter;
-    private String secret_key = "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";
+    private String secret_key = "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";
     OkHttpClient client = new OkHttpClient();
     int REQUEST_CODE_SPEECH_INPUT = 22222;
     TextToSpeech t1;
@@ -331,7 +331,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnUt
 
                 }
             }
-        }, 2000);
+        }, 500);
 
 
     }

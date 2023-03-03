@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/speaker"
+        android:title="speaker"
+        app:showAsAction="always"
+        app:actionViewClass="android.widget.ImageView"
+        android:icon="@drawable/ic_baseline_volume_up_24"
+
+        />
+    <item
+        android:id="@+id/show_secure"
+        android:enabled="true"
+        android:title=""
+        android:visible="true"
+        app:actionLayout="@layout/menu_entity"
+        app:showAsAction="ifRoom" />
+</menu>
